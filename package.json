@@ -1,0 +1,13 @@
+{
+  "name": "joody-birthday",
+  "version": "1.0.0",
+  "description": "Birthday website with real-time chat for Joody",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {}
+}

@@ -268,8 +268,8 @@ function replenishBalloons() {
 }
 
 // ===== Countdown -> Reveal button -> Message =====
-// العداد لحد 1/9 الساعة 12 بليل
-const targetDate = new Date(2026, 8, 1, 0, 0);
+// العداد لحد 1/9/2027 الساعة 12 بليل
+const targetDate = new Date(2027, 8, 1, 0, 0);
 
 const daysEl = document.getElementById('days');
 const hoursEl = document.getElementById('hours');

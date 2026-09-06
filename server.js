@@ -3,8 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const ROOT = __dirname;
+const MESSAGES_FILE = path.join(ROOT, 'messages.json');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -21,6 +22,54 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   let urlPath = decodeURIComponent(req.url.split('?')[0]);
+
+  if (urlPath === '/api/messages') {
+    if (req.method === 'GET') {
+      fs.readFile(MESSAGES_FILE, 'utf8', (err, data) => {
+        if (err) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify([]));
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(data || '[]');
+      });
+      return;
+    } else if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => {
+        try {
+          const newMsg = JSON.parse(body);
+          fs.readFile(MESSAGES_FILE, 'utf8', (err, data) => {
+            let messages = [];
+            if (!err && data) {
+              try { messages = JSON.parse(data); } catch(e){}
+            }
+            messages.push({
+              sender: newMsg.sender || 'مجهول',
+              text: newMsg.text || '',
+              time: newMsg.time || new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})
+            });
+            fs.writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf8', (err2) => {
+              if (err2) {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ error: 'Failed to save' }));
+                return;
+              }
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ success: true }));
+            });
+          });
+        } catch(e) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'Invalid JSON' }));
+        }
+      });
+      return;
+    }
+  }
+
   if (urlPath === '/') urlPath = '/index.html';
   const filePath = path.join(ROOT, urlPath);
   if (!filePath.startsWith(ROOT)) {
