@@ -324,3 +324,76 @@ function updateCountdown() {
   minutesEl.textContent = String(minutes).padStart(2, '0');
   secondsEl.textContent = String(seconds).padStart(2, '0');
 }
+
+// ===== Notification & Unread Badge for Chat =====
+if ('Notification' in window) {
+  if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    document.addEventListener('click', () => {
+      Notification.requestPermission().catch(() => {});
+    }, { once: true });
+  }
+}
+
+const TURSO_URL = "https://jjjj-kingjohnalmlk.aws-ap-northeast-1.turso.io/v2/pipeline";
+const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODg3MDk0MjMsImlkIjoiMDFhMDc3NjMtMDgwMS03MDNmLTg0ZTQtNzI1NGJmYWY2YTkxIiwia2lkIjoidHEzczY5amdRNzdwQjdmRl9fWnh4eHA0OG9CWHA3M0ZjTGh3N2xlMmlIYyIsInJpZCI6ImU4NzdiYmM1LWYwMTgtNGFiMi05MjgyLWFjNTk2NDBlYWE4NCJ9.O3lAKEZ0jbq3bvW7RSNFAoLTqTNdTpgJUY81o1YEDDg1yfSOlHas7QpW9OSPY3hN_ZXqyduHCTHVr1QB4IetAQ";
+
+let lastKnownMessageCount = -1;
+const chatBadge = document.getElementById('chatBadge');
+
+function checkNewMessages() {
+  fetch(TURSO_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + TURSO_TOKEN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      requests: [
+        { type: "execute", stmt: { sql: "SELECT sender, text, time FROM messages ORDER BY id ASC" } },
+        { type: "close" }
+      ]
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const rawRows = data?.results?.[0]?.response?.result?.rows || [];
+    const messages = rawRows.map(r => ({
+      sender: r[0]?.value || '',
+      text: r[1]?.value || '',
+      time: r[2]?.value || ''
+    }));
+
+    if (lastKnownMessageCount === -1) {
+      lastKnownMessageCount = messages.length;
+      return;
+    }
+
+    if (messages.length > lastKnownMessageCount) {
+      const newMsgs = messages.slice(lastKnownMessageCount);
+      lastKnownMessageCount = messages.length;
+
+      const latest = newMsgs[newMsgs.length - 1];
+      const myName = localStorage.getItem('chat_sender_name') || 'جودي';
+
+      if (latest.sender !== myName) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification(`💬 رسالة جديدة من ${latest.sender}`, {
+              body: latest.text,
+              icon: 'https://cdn-icons-png.flaticon.com/512/893/893257.png'
+            });
+          } catch(e) {}
+        }
+
+        if (chatBadge) {
+          const currentCount = parseInt(chatBadge.textContent || '0') + newMsgs.length;
+          chatBadge.textContent = currentCount;
+          chatBadge.classList.remove('hidden');
+        }
+      }
+    }
+  })
+  .catch(err => {});
+}
+
+setInterval(checkNewMessages, 3000);
