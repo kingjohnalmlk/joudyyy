@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>شات  </title>
+<title>شات بيني وبينك 💬</title>
 <link rel="stylesheet" href="style.css">
 <style>
   body {
@@ -24,13 +24,13 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 80vh;
+    height: 82vh;
   }
   .chat-header-bar {
     background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
     padding: 18px 20px;
     text-align: center;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 900;
     color: #fff;
     text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
@@ -133,18 +133,13 @@
     transition: transform 0.2s;
   }
   .chat-back-btn:hover { transform: scale(1.05); }
-
-  @media (max-width: 600px) {
-    body { padding: 10px; }
-    .chat-container { height: 85vh; width: 100%; }
-  }
 </style>
 </head>
 <body>
 
 <div class="chat-container">
   <div class="chat-header-bar">
-    💬 شات
+    💬 شات مباشر
   </div>
   <div class="chat-messages-area" id="chatBody">
     <!-- Messages -->
@@ -187,7 +182,7 @@ function sendMessage() {
   const text = chatTextInput.value.trim();
   if (!text) return;
 
-  const msgData = {
+  const newMsg = {
     sender: sender,
     text: text,
     time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
@@ -196,7 +191,7 @@ function sendMessage() {
   fetch('/api/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(msgData)
+    body: JSON.stringify(newMsg)
   })
   .then(res => res.json())
   .then(data => {
@@ -205,7 +200,10 @@ function sendMessage() {
       fetchMessages();
     }
   })
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error(err);
+    alert('حدث خطأ أثناء الإرسال.');
+  });
 }
 
 let lastMessagesJson = '';
@@ -213,12 +211,13 @@ function fetchMessages() {
   fetch('/api/messages')
     .then(res => res.json())
     .then(messages => {
+      if (!Array.isArray(messages)) messages = [];
       const jsonStr = JSON.stringify(messages);
       if (jsonStr === lastMessagesJson) return;
       lastMessagesJson = jsonStr;
 
       chatBody.innerHTML = '';
-      if (!messages || messages.length === 0) {
+      if (messages.length === 0) {
         chatBody.innerHTML = '<div style="text-align:center; color:#888; font-size:1rem; margin-top:40px;">مفيش رسائل لسه، ابدأ الكلام! 💬</div>';
         return;
       }
@@ -257,7 +256,7 @@ function escapeHtml(str) {
 }
 
 fetchMessages();
-setInterval(fetchMessages, 2000);
+setInterval(fetchMessages, 2500);
 </script>
 </body>
 </html>

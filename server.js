@@ -2,10 +2,24 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { createClient } = require('@libsql/client');
 
 const PORT = process.env.PORT || 8080;
 const ROOT = __dirname;
-const MESSAGES_FILE = path.join(ROOT, 'messages.json');
+
+const db = createClient({
+  url: process.env.TURSO_DATABASE_URL || "libsql://jjjj-kingjohnalmlk.aws-ap-northeast-1.turso.io",
+  authToken: process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODg3MDk0MjMsImlkIjoiMDFhMDc3NjMtMDgwMS03MDNmLTg0ZTQtNzI1NGJmYWY2YTkxIiwia2lkIjoidHEzczY5amdRNzdwQjdmRl9fWnh4eHA0OG9CWHA3M0ZjTGh3N2xlMmlIYyIsInJpZCI6ImU4NzdiYmM1LWYwMTgtNGFiMi05MjgyLWFjNTk2NDBlYWE4NCJ9.O3lAKEZ0jbq3bvW7RSNFAoLTqTNdTpgJUY81o1YEDDg1yfSOlHas7QpW9OSPY3hN_ZXqyduHCTHVr1QB4IetAQ"
+});
+
+db.execute(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender TEXT,
+    text TEXT,
+    time TEXT
+  )
+`).catch(console.error);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -24,16 +38,26 @@ const server = http.createServer((req, res) => {
   let urlPath = decodeURIComponent(req.url.split('?')[0]);
 
   if (urlPath === '/api/messages') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(200);
+      res.end();
+      return;
+    }
+
     if (req.method === 'GET') {
-      fs.readFile(MESSAGES_FILE, 'utf8', (err, data) => {
-        if (err) {
+      db.execute("SELECT sender, text, time FROM messages ORDER BY id ASC")
+        .then(rs => {
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify([]));
-          return;
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(data || '[]');
-      });
+          res.end(JSON.stringify(rs.rows));
+        })
+        .catch(err => {
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: err.message }));
+        });
       return;
     } else if (req.method === 'POST') {
       let body = '';
@@ -41,25 +65,22 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const newMsg = JSON.parse(body);
-          fs.readFile(MESSAGES_FILE, 'utf8', (err, data) => {
-            let messages = [];
-            if (!err && data) {
-              try { messages = JSON.parse(data); } catch(e){}
-            }
-            messages.push({
-              sender: newMsg.sender || 'مجهول',
-              text: newMsg.text || '',
-              time: newMsg.time || new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})
-            });
-            fs.writeFile(MESSAGES_FILE, JSON.stringify(messages, null, 2), 'utf8', (err2) => {
-              if (err2) {
-                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({ error: 'Failed to save' }));
-                return;
-              }
-              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-              res.end(JSON.stringify({ success: true }));
-            });
+          if (!newMsg.text) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: 'Text required' }));
+            return;
+          }
+          db.execute({
+            sql: "INSERT INTO messages (sender, text, time) VALUES (?, ?, ?)",
+            args: [newMsg.sender || 'مجهول', newMsg.text, newMsg.time || '']
+          })
+          .then(() => {
+            res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ success: true }));
+          })
+          .catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: err.message }));
           });
         } catch(e) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -92,24 +113,3 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log('server up on port ' + PORT);
 });
-
-function getLANIP() {
-  const nets = os.networkInterfaces();
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      if (net.family === 'IPv4' && !net.internal) {
-        return net.address;
-      }
-    }
-  }
-  return 'localhost';
-}
-
-setTimeout(() => {
-  const ip = getLANIP();
-  console.log('\n-----------------------------------------');
-  console.log('  الموقع جاهز على موبايلك!');
-  console.log('  من نفس الواي فاي افتح:');
-  console.log('  http://' + ip + ':' + PORT);
-  console.log('-----------------------------------------\n');
-}, 300);
