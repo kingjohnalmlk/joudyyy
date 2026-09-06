@@ -267,62 +267,16 @@ function replenishBalloons() {
   }, 2500);
 }
 
-// ===== Countdown -> Reveal button -> Message =====
-// العداد لحد 1/9/2027 الساعة 12 بليل
-const targetDate = new Date(2027, 8, 1, 0, 0);
-
-const daysEl = document.getElementById('days');
-const hoursEl = document.getElementById('hours');
-const minutesEl = document.getElementById('minutes');
-const secondsEl = document.getElementById('seconds');
+// ===== Auto Reveal Message (No Timer needed) =====
 const countdownBox = document.getElementById('countdownBox');
-const revealBtn = document.getElementById('revealBtn');
 const messageBox = document.getElementById('messageBox');
 
-function showRevealButton() {
-  clearInterval(timerInterval);
-  // hide the timer numbers, show the button
-  document.getElementById('timer').classList.add('hidden');
-  document.getElementById('countdownDone').classList.remove('hidden');
-  revealBtn.classList.remove('hidden');
-  launchConfetti();
-}
-
-let timerInterval = setInterval(updateCountdown, 1000);
-updateCountdown();
-
-revealBtn.addEventListener('click', () => {
+if (countdownBox) countdownBox.classList.add('hidden');
+if (messageBox) {
+  messageBox.classList.remove('hidden');
   birthdayRevealed = true;
-  revealBtn.classList.add('hidden');
-  countdownBox.classList.add('hidden');   // hide the whole countdown box
-  messageBox.classList.remove('hidden');  // show the message
-  startAudio();                           // start the music
+  startAudio();
   launchConfetti();
-  // celebrate with periodic bursts
-  setInterval(() => {
-    if (Math.random() < 0.4) launchConfetti();
-  }, 5000);
-  messageBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-});
-
-function updateCountdown() {
-  const now = new Date();
-  const diff = targetDate - now;
-
-  if (diff <= 0) {
-    showRevealButton();
-    return;
-  }
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  const seconds = Math.floor((diff / 1000) % 60);
-
-  daysEl.textContent = days;
-  hoursEl.textContent = String(hours).padStart(2, '0');
-  minutesEl.textContent = String(minutes).padStart(2, '0');
-  secondsEl.textContent = String(seconds).padStart(2, '0');
 }
 
 // ===== Notification & Unread Badge for Chat =====
