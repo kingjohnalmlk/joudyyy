@@ -17,7 +17,8 @@ db.execute(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sender TEXT,
     text TEXT,
-    time TEXT
+    time TEXT,
+    seen_by TEXT DEFAULT ''
   )
 `).catch(console.error);
 
@@ -49,7 +50,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'GET') {
-      db.execute("SELECT sender, text, time FROM messages ORDER BY id ASC")
+      db.execute("SELECT id, sender, text, time, seen_by FROM messages ORDER BY id ASC")
         .then(rs => {
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify(rs.rows));
@@ -64,15 +65,31 @@ const server = http.createServer((req, res) => {
       req.on('data', chunk => { body += chunk; });
       req.on('end', () => {
         try {
-          const newMsg = JSON.parse(body);
-          if (!newMsg.text) {
+          const data = JSON.parse(body);
+          if (data.action === 'seen') {
+            db.execute({
+              sql: "UPDATE messages SET seen_by = ? WHERE id = ? AND (seen_by IS NULL OR seen_by = '')",
+              args: [data.seen_by, data.id]
+            })
+            .then(() => {
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ success: true }));
+            })
+            .catch(err => {
+              res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify({ error: err.message }));
+            });
+            return;
+          }
+
+          if (!data.text) {
             res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({ error: 'Text required' }));
             return;
           }
           db.execute({
-            sql: "INSERT INTO messages (sender, text, time) VALUES (?, ?, ?)",
-            args: [newMsg.sender || 'مجهول', newMsg.text, newMsg.time || '']
+            sql: "INSERT INTO messages (sender, text, time, seen_by) VALUES (?, ?, ?, '')",
+            args: [data.sender || 'مجهول', data.text, data.time || '']
           })
           .then(() => {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });

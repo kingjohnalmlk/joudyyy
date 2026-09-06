@@ -54,6 +54,7 @@
     font-weight: 700;
     box-shadow: 0 2px 5px rgba(0,0,0,0.08);
     word-break: break-word;
+    position: relative;
   }
   .chat-message.me {
     align-self: flex-start;
@@ -75,6 +76,28 @@
     display: flex;
     justify-content: space-between;
     gap: 15px;
+  }
+  .chat-msg-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    opacity: 0.85;
+    gap: 5px;
+  }
+  .seen-badge {
+    cursor: pointer;
+    background: rgba(0,0,0,0.1);
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: background 0.2s;
+  }
+  .seen-badge:hover {
+    background: rgba(0,0,0,0.2);
   }
   .chat-input-bar {
     background: #fff;
@@ -180,12 +203,24 @@ chatTextInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') sendMessage();
 });
 
+// Robust time formatter
+function formatTime() {
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = now.getMinutes();
+  const ampm = hours >= 12 ? 'م' : 'ص';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strM = minutes < 10 ? '0' + minutes : minutes;
+  return hours + ':' + strM + ' ' + ampm;
+}
+
 function sendMessage() {
   const sender = chatSenderInput.value.trim() || 'مجهول';
   const text = chatTextInput.value.trim();
   if (!text) return;
 
-  const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+  const time = formatTime();
 
   chatSendBtn.disabled = true;
 
@@ -200,7 +235,7 @@ function sendMessage() {
         {
           type: "execute",
           stmt: {
-            sql: "INSERT INTO messages (sender, text, time) VALUES (?, ?, ?)",
+            sql: "INSERT INTO messages (sender, text, time, seen_by) VALUES (?, ?, ?, '')",
             args: [
               { type: "text", value: sender },
               { type: "text", value: text },
@@ -249,7 +284,7 @@ function fetchMessages() {
         {
           type: "execute",
           stmt: {
-            sql: "SELECT sender, text, time FROM messages ORDER BY id ASC"
+            sql: "SELECT id, sender, text, time, seen_by FROM messages ORDER BY id ASC"
           }
         },
         { type: "close" }
@@ -260,14 +295,24 @@ function fetchMessages() {
   .then(data => {
     const rawRows = data?.results?.[0]?.response?.result?.rows || [];
     const messages = rawRows.map(r => ({
-      sender: r[0]?.value || '',
-      text: r[1]?.value || '',
-      time: r[2]?.value || ''
+      id: r[0]?.value,
+      sender: r[1]?.value || '',
+      text: r[2]?.value || '',
+      time: r[3]?.value || '',
+      seenBy: r[4]?.value || ''
     }));
+
+    const currentSender = chatSenderInput.value.trim();
+
+    // Mark unread messages from other user as seen
+    messages.forEach(msg => {
+      if (msg.sender !== currentSender && (!msg.seenBy || !msg.seenBy.includes(currentSender))) {
+        markAsSeen(msg.id, currentSender);
+      }
+    });
 
     if (lastNotifCount !== -1 && messages.length > lastNotifCount) {
       const latest = messages[messages.length - 1];
-      const currentSender = chatSenderInput.value.trim();
       if (latest.sender !== currentSender && document.hidden) {
         if ('Notification' in window && Notification.permission === 'granted') {
           try {
@@ -291,12 +336,15 @@ function fetchMessages() {
       return;
     }
 
-    const currentSender = chatSenderInput.value.trim();
-
     messages.forEach(msg => {
       const div = document.createElement('div');
       const isMe = (msg.sender === currentSender);
       div.className = 'chat-message ' + (isMe ? 'me' : 'other');
+
+      let seenHtml = '';
+      if (isMe && msg.seenBy) {
+        seenHtml = `<span class="seen-badge" onclick="showSeenInfo('${escapeHtml(msg.seenBy)}')">👁️ تمت رؤيتها بواسطة: ${escapeHtml(msg.seenBy)}</span>`;
+      }
 
       div.innerHTML = `
         <div class="chat-msg-info">
@@ -304,12 +352,42 @@ function fetchMessages() {
           <span>${escapeHtml(msg.time || '')}</span>
         </div>
         <div>${escapeHtml(msg.text)}</div>
+        ${seenHtml ? `<div class="chat-msg-footer">${seenHtml}</div>` : ''}
       `;
       chatBody.appendChild(div);
     });
     scrollToBottom();
   })
   .catch(err => console.error(err));
+}
+
+function markAsSeen(msgId, readerName) {
+  fetch(TURSO_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + TURSO_TOKEN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          type: "execute",
+          stmt: {
+            sql: "UPDATE messages SET seen_by = ? WHERE id = ? AND (seen_by IS NULL OR seen_by = '')",
+            args: [
+              { type: "text", value: readerName },
+              { type: "integer", value: Number(msgId) }
+            ]
+          }
+        },
+        { type: "close" }
+      ]
+    })
+  }).catch(err => console.error(err));
+}
+
+function showSeenInfo(seenBy) {
+  alert('👁️ تمت رؤية هذه الرسالة بواسطة: ' + seenBy);
 }
 
 function scrollToBottom() {

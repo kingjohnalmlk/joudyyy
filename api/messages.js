@@ -11,7 +11,8 @@ async function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sender TEXT,
       text TEXT,
-      time TEXT
+      time TEXT,
+      seen_by TEXT DEFAULT ''
     )
   `);
 }
@@ -30,18 +31,27 @@ module.exports = async function handler(req, res) {
     await initDb();
 
     if (req.method === 'GET') {
-      const rs = await db.execute("SELECT sender, text, time FROM messages ORDER BY id ASC");
+      const rs = await db.execute("SELECT id, sender, text, time, seen_by FROM messages ORDER BY id ASC");
       return res.status(200).json(rs.rows);
     }
 
     if (req.method === 'POST') {
-      const { sender, text, time } = req.body || {};
+      const body = req.body || {};
+      if (body.action === 'seen') {
+        await db.execute({
+          sql: "UPDATE messages SET seen_by = ? WHERE id = ? AND (seen_by IS NULL OR seen_by = '')",
+          args: [body.seen_by, body.id]
+        });
+        return res.status(200).json({ success: true });
+      }
+
+      const { sender, text, time } = body;
       if (!text) {
         return res.status(400).json({ error: 'Text is required' });
       }
 
       await db.execute({
-        sql: "INSERT INTO messages (sender, text, time) VALUES (?, ?, ?)",
+        sql: "INSERT INTO messages (sender, text, time, seen_by) VALUES (?, ?, ?, '')",
         args: [sender || 'مجهول', text, time || '']
       });
 
