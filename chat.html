@@ -181,9 +181,6 @@
 <a href="index.html" class="chat-back-btn">⬅ العودة للموقع الرئيسي</a>
 
 <script>
-const TURSO_URL = "https://jjjj-kingjohnalmlk.aws-ap-northeast-1.turso.io/v2/pipeline";
-const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODg3MDk0MjMsImlkIjoiMDFhMDc3NjMtMDgwMS03MDNmLTg0ZTQtNzI1NGJmYWY2YTkxIiwia2lkIjoidHEzczY5amdRNzdwQjdmRl9fWnh4eHA0OG9CWHA3M0ZjTGh3N2xlMmlIYyIsInJpZCI6ImU4NzdiYmM1LWYwMTgtNGFiMi05MjgyLWFjNTk2NDBlYWE4NCJ9.O3lAKEZ0jbq3bvW7RSNFAoLTqTNdTpgJUY81o1YEDDg1yfSOlHas7QpW9OSPY3hN_ZXqyduHCTHVr1QB4IetAQ";
-
 const chatBody = document.getElementById('chatBody');
 const chatSenderInput = document.getElementById('chatSenderInput');
 const chatTextInput = document.getElementById('chatTextInput');
@@ -221,31 +218,12 @@ function sendMessage() {
   if (!text) return;
 
   const time = formatTime();
-
   chatSendBtn.disabled = true;
 
-  fetch(TURSO_URL, {
+  fetch('/api/messages', {
     method: "POST",
-    headers: {
-      "Authorization": "Bearer " + TURSO_TOKEN,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: "execute",
-          stmt: {
-            sql: "INSERT INTO messages (sender, text, time, seen_by) VALUES (?, ?, ?, '')",
-            args: [
-              { type: "text", value: sender },
-              { type: "text", value: text },
-              { type: "text", value: time }
-            ]
-          }
-        },
-        { type: "close" }
-      ]
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sender, text, time })
   })
   .then(res => res.json())
   .then(() => {
@@ -273,116 +251,75 @@ if ('Notification' in window) {
 }
 
 function fetchMessages() {
-  fetch(TURSO_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + TURSO_TOKEN,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: "execute",
-          stmt: {
-            sql: "SELECT id, sender, text, time, seen_by FROM messages ORDER BY id ASC"
+  fetch('/api/messages')
+    .then(res => res.json())
+    .then(messages => {
+      if (!Array.isArray(messages)) messages = [];
+
+      const currentSender = chatSenderInput.value.trim();
+
+      // Mark unread messages from other user as seen
+      messages.forEach(msg => {
+        if (msg.sender !== currentSender && (!msg.seen_by || !msg.seen_by.includes(currentSender))) {
+          markAsSeen(msg.id, currentSender);
+        }
+      });
+
+      if (lastNotifCount !== -1 && messages.length > lastNotifCount) {
+        const latest = messages[messages.length - 1];
+        if (latest.sender !== currentSender && document.hidden) {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification(`💬 رسالة جديدة من ${latest.sender}`, {
+                body: latest.text,
+                icon: 'https://cdn-icons-png.flaticon.com/512/893/893257.png'
+              });
+            } catch(e) {}
           }
-        },
-        { type: "close" }
-      ]
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    const rawRows = data?.results?.[0]?.response?.result?.rows || [];
-    const messages = rawRows.map(r => ({
-      id: r[0]?.value,
-      sender: r[1]?.value || '',
-      text: r[2]?.value || '',
-      time: r[3]?.value || '',
-      seenBy: r[4]?.value || ''
-    }));
-
-    const currentSender = chatSenderInput.value.trim();
-
-    // Mark unread messages from other user as seen
-    messages.forEach(msg => {
-      if (msg.sender !== currentSender && (!msg.seenBy || !msg.seenBy.includes(currentSender))) {
-        markAsSeen(msg.id, currentSender);
-      }
-    });
-
-    if (lastNotifCount !== -1 && messages.length > lastNotifCount) {
-      const latest = messages[messages.length - 1];
-      if (latest.sender !== currentSender && document.hidden) {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          try {
-            new Notification(`💬 رسالة جديدة من ${latest.sender}`, {
-              body: latest.text,
-              icon: 'https://cdn-icons-png.flaticon.com/512/893/893257.png'
-            });
-          } catch(e) {}
         }
       }
-    }
-    lastNotifCount = messages.length;
+      lastNotifCount = messages.length;
 
-    const jsonStr = JSON.stringify(messages);
-    if (jsonStr === lastMessagesJson) return;
-    lastMessagesJson = jsonStr;
+      const jsonStr = JSON.stringify(messages);
+      if (jsonStr === lastMessagesJson) return;
+      lastMessagesJson = jsonStr;
 
-    chatBody.innerHTML = '';
-    if (messages.length === 0) {
-      chatBody.innerHTML = '<div style="text-align:center; color:#888; font-size:1rem; margin-top:40px;">مفيش رسائل لسه، ابدأ الكلام! 💬</div>';
-      return;
-    }
-
-    messages.forEach(msg => {
-      const div = document.createElement('div');
-      const isMe = (msg.sender === currentSender);
-      div.className = 'chat-message ' + (isMe ? 'me' : 'other');
-
-      let seenHtml = '';
-      if (isMe && msg.seenBy) {
-        seenHtml = `<span class="seen-badge" onclick="showSeenInfo('${escapeHtml(msg.seenBy)}')">👁️ تمت رؤيتها بواسطة: ${escapeHtml(msg.seenBy)}</span>`;
+      chatBody.innerHTML = '';
+      if (messages.length === 0) {
+        chatBody.innerHTML = '<div style="text-align:center; color:#888; font-size:1rem; margin-top:40px;">مفيش رسائل لسه، ابدأ الكلام! 💬</div>';
+        return;
       }
 
-      div.innerHTML = `
-        <div class="chat-msg-info">
-          <span><b>${escapeHtml(msg.sender)}</b></span>
-          <span>${escapeHtml(msg.time || '')}</span>
-        </div>
-        <div>${escapeHtml(msg.text)}</div>
-        ${seenHtml ? `<div class="chat-msg-footer">${seenHtml}</div>` : ''}
-      `;
-      chatBody.appendChild(div);
-    });
-    scrollToBottom();
-  })
-  .catch(err => console.error(err));
+      messages.forEach(msg => {
+        const div = document.createElement('div');
+        const isMe = (msg.sender === currentSender);
+        div.className = 'chat-message ' + (isMe ? 'me' : 'other');
+
+        let seenHtml = '';
+        if (isMe && msg.seen_by) {
+          seenHtml = `<span class="seen-badge" onclick="showSeenInfo('${escapeHtml(msg.seen_by)}')">👁️ تمت رؤيتها بواسطة: ${escapeHtml(msg.seen_by)}</span>`;
+        }
+
+        div.innerHTML = `
+          <div class="chat-msg-info">
+            <span><b>${escapeHtml(msg.sender)}</b></span>
+            <span>${escapeHtml(msg.time || '')}</span>
+          </div>
+          <div>${escapeHtml(msg.text)}</div>
+          ${seenHtml ? `<div class="chat-msg-footer">${seenHtml}</div>` : ''}
+        `;
+        chatBody.appendChild(div);
+      });
+      scrollToBottom();
+    })
+    .catch(err => console.error(err));
 }
 
 function markAsSeen(msgId, readerName) {
-  fetch(TURSO_URL, {
+  fetch('/api/messages', {
     method: "POST",
-    headers: {
-      "Authorization": "Bearer " + TURSO_TOKEN,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: "execute",
-          stmt: {
-            sql: "UPDATE messages SET seen_by = ? WHERE id = ? AND (seen_by IS NULL OR seen_by = '')",
-            args: [
-              { type: "text", value: readerName },
-              { type: "integer", value: Number(msgId) }
-            ]
-          }
-        },
-        { type: "close" }
-      ]
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: 'seen', id: msgId, seen_by: readerName })
   }).catch(err => console.error(err));
 }
 
