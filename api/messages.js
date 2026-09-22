@@ -1,10 +1,8 @@
 const { createClient } = require("@libsql/client");
-const config = require("../config");
 
-// Connect to Turso
 const db = createClient({
-  url: config.TURSO_DATABASE_URL,
-  authToken: config.TURSO_AUTH_TOKEN,
+  url: "libsql://jjjj-kingjohnalmlk.aws-ap-northeast-1.turso.io",
+  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODg3MDk0MjMsImlkIjoiMDFhMDc3NjMtMDgwMS03MDNmLTg0ZTQtNzI1NGJmYWY2YTkxIiwia2lkIjoidHEzczY5amdRNzdwQjdmRl9fWnh4eHA0OG9CWHA3M0ZjTGh3N2xlMmlIYyIsInJpZCI6ImU4NzdiYmM1LWYwMTgtNGFiMi05MjgyLWFjNTk2NDBlYWE4NCJ9.O3lAKEZ0jbq3bvW7RSNFAoLTqTNdTpgJUY81o1YEDDg1yfSOlHas7QpW9OSPY3hN_ZXqyduHCTHVr1QB4IetAQ",
 });
 
 async function initDb() {
