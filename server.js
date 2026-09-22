@@ -2,20 +2,15 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-require('dotenv').config();
 const { createClient } = require('@libsql/client');
+const config = require('./config');
 
-const PORT = process.env.PORT || 8080;
+const PORT = config.PORT || 8080;
 const ROOT = __dirname;
 
-if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-  console.error('ERROR: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in .env');
-  process.exit(1);
-}
-
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN
+  url: config.TURSO_DATABASE_URL,
+  authToken: config.TURSO_AUTH_TOKEN
 });
 
 db.execute(`

@@ -1,24 +1,13 @@
 const { createClient } = require("@libsql/client");
+const config = require("../config");
 
 // Connect to Turso
-const db =
-  process.env.TURSO_DATABASE_URL && process.env.TURSO_AUTH_TOKEN
-    ? createClient({
-        url: process.env.TURSO_DATABASE_URL,
-        authToken: process.env.TURSO_AUTH_TOKEN,
-      })
-    : null;
+const db = createClient({
+  url: config.TURSO_DATABASE_URL,
+  authToken: config.TURSO_AUTH_TOKEN,
+});
 
 async function initDb() {
-  // Give a clear error if Vercel doesn't provide the variables
-  if (!process.env.TURSO_DATABASE_URL) {
-    throw new Error("TURSO_DATABASE_URL is missing");
-  }
-
-  if (!process.env.TURSO_AUTH_TOKEN) {
-    throw new Error("TURSO_AUTH_TOKEN is missing");
-  }
-
   if (!db) {
     throw new Error("Database client was not initialized");
   }
