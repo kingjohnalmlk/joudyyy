@@ -2,14 +2,20 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+require('dotenv').config();
 const { createClient } = require('@libsql/client');
 
 const PORT = process.env.PORT || 8080;
 const ROOT = __dirname;
 
+if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+  console.error('ERROR: TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set in .env');
+  process.exit(1);
+}
+
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL || "libsql://jjjj-kingjohnalmlk.aws-ap-northeast-1.turso.io",
-  authToken: process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODg3MDk0MjMsImlkIjoiMDFhMDc3NjMtMDgwMS03MDNmLTg0ZTQtNzI1NGJmYWY2YTkxIiwia2lkIjoidHEzczY5amdRNzdwQjdmRl9fWnh4eHA0OG9CWHA3M0ZjTGh3N2xlMmlIYyIsInJpZCI6ImU4NzdiYmM1LWYwMTgtNGFiMi05MjgyLWFjNTk2NDBlYWE4NCJ9.O3lAKEZ0jbq3bvW7RSNFAoLTqTNdTpgJUY81o1YEDDg1yfSOlHas7QpW9OSPY3hN_ZXqyduHCTHVr1QB4IetAQ"
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN
 });
 
 db.execute(`
@@ -18,7 +24,10 @@ db.execute(`
     sender TEXT,
     text TEXT,
     time TEXT,
-    seen_by TEXT DEFAULT ''
+    seen_by TEXT DEFAULT '',
+    msg_type TEXT DEFAULT 'text',
+    file_data TEXT DEFAULT '',
+    file_name TEXT DEFAULT ''
   )
 `).catch(console.error);
 
@@ -33,6 +42,7 @@ const MIME = {
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.json': 'application/json; charset=utf-8',
 };
 
 const server = http.createServer((req, res) => {
@@ -40,7 +50,7 @@ const server = http.createServer((req, res) => {
 
   if (urlPath === '/api/messages') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -50,10 +60,21 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'GET') {
-      db.execute("SELECT id, sender, text, time, seen_by FROM messages ORDER BY id ASC")
+      db.execute("SELECT id, sender, text, time, seen_by, msg_type, file_data, file_name FROM messages ORDER BY id ASC")
         .then(rs => {
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify(rs.rows));
+        })
+        .catch(err => {
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: err.message }));
+        });
+      return;
+    } else if (req.method === 'DELETE') {
+      db.execute("DELETE FROM messages")
+        .then(() => {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ success: true }));
         })
         .catch(err => {
           res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -82,14 +103,21 @@ const server = http.createServer((req, res) => {
             return;
           }
 
-          if (!data.text) {
+          if (!data.text && !data.file_data) {
             res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ error: 'Text required' }));
+            res.end(JSON.stringify({ error: 'Content required' }));
             return;
           }
           db.execute({
-            sql: "INSERT INTO messages (sender, text, time, seen_by) VALUES (?, ?, ?, '')",
-            args: [data.sender || 'مجهول', data.text, data.time || '']
+            sql: "INSERT INTO messages (sender, text, time, seen_by, msg_type, file_data, file_name) VALUES (?, ?, ?, '', ?, ?, ?)",
+            args: [
+              data.sender || 'مجهول',
+              data.text || '',
+              data.time || '',
+              data.msg_type || 'text',
+              data.file_data || '',
+              data.file_name || ''
+            ]
           })
           .then(() => {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -127,6 +155,14 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
+  const nets = os.networkInterfaces();
   console.log('server up on port ' + PORT);
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        console.log('Network: http://' + net.address + ':' + PORT);
+      }
+    }
+  }
 });

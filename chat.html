@@ -3,279 +3,1260 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>شات بيني وبينك 💬</title>
+<title>شات</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
+  :root {
+    --bg1: #fde2e4;
+    --bg2: #f8e6d8;
+    --bg3: #dfd9f5;
+    --bg4: #fbe7f5;
+    --card-bg: rgba(255,255,255,0.95);
+    --card-text: #333;
+    --card-sub: #999;
+    --field-bg: #f8f8f8;
+    --field-border: #eee;
+    --field-text: #333;
+    --msg-other-bg: #fff;
+    --msg-other-text: #333;
+    --msg-other-border: #f0f0f0;
+    --input-bar-bg: #fff;
+    --input-border: #f0f0f0;
+    --input-bg: #fafafa;
+    --input-text: #333;
+    --chip-bg: rgba(0,0,0,0.08);
+    --chip-hover: rgba(0,0,0,0.15);
+    --empty-text: #aaa;
+  }
+  html.dark {
+    --bg1: #1d1d2d;
+    --bg2: #282840;
+    --bg3: #332048;
+    --bg4: #1a1a2e;
+    --card-bg: rgba(35,35,55,0.96);
+    --card-text: #eee;
+    --card-sub: #9a9ab0;
+    --field-bg: #2a2a42;
+    --field-border: #3a3a55;
+    --field-text: #eee;
+    --msg-other-bg: #3a3a56;
+    --msg-other-text: #eee;
+    --msg-other-border: #444466;
+    --input-bar-bg: #2a2a42;
+    --input-border: #3a3a55;
+    --input-bg: #21213a;
+    --input-text: #eee;
+    --chip-bg: rgba(255,255,255,0.1);
+    --chip-hover: rgba(255,255,255,0.18);
+    --empty-text: #777a90;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
   body {
     display: flex;
     flex-direction: column;
+    background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 25%, var(--bg3) 60%, var(--bg4) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 12s ease infinite;
+    font-family: 'Cairo', sans-serif;
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* ===== LOGIN SCREEN ===== */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 25%, var(--bg3) 60%, var(--bg4) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 12s ease infinite;
   }
+  .login-overlay.hidden { display: none; }
+  .login-card {
+    position: relative;
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    border-radius: 28px;
+    padding: 45px 40px 40px;
+    width: 92%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+    animation: cardIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: scale(0.8) translateY(30px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .login-icon-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 25px rgba(255,107,107,0.35);
+    animation: bounce 2s infinite;
+  }
+  .login-icon-circle i {
+    font-size: 2.4rem;
+    color: #fff;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .login-title {
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--card-text);
+    margin-bottom: 6px;
+    transition: color 0.3s;
+  }
+  .login-subtitle {
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem;
+    color: var(--card-sub);
+    margin-bottom: 28px;
+  }
+  .login-field-wrap {
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .login-field-wrap i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ccc;
+    font-size: 1rem;
+    transition: color 0.3s;
+  }
+  .login-field-wrap input:focus {
+    border-color: #ff6b6b;
+    background: var(--field-bg);
+  }
+  .login-field-wrap input:focus + i { color: #ff6b6b; }
+  .login-field {
+    width: 100%;
+    padding: 14px 45px 14px 20px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    border: 2px solid var(--field-border);
+    border-radius: 14px;
+    outline: none;
+    background: var(--field-bg);
+    color: var(--field-text);
+    transition: border-color 0.3s, background 0.3s, color 0.3s;
+    text-align: center;
+    direction: rtl;
+  }
+  .login-field::placeholder { color: #bbb; font-weight: 600; }
+  .login-btn {
+    width: 100%;
+    padding: 15px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 900;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
+    color: #fff;
+    cursor: pointer;
+    margin-top: 6px;
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .login-btn:hover { transform: scale(1.03); box-shadow: 0 8px 25px rgba(255,107,107,0.5); }
+  .login-btn:active { transform: scale(0.97); }
+  .login-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+  .login-error {
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem;
+    color: #ff6b6b;
+    margin-top: 14px;
+    font-weight: 700;
+    min-height: 24px;
+  }
+  .login-notif-btn {
+    margin-top: 10px;
+    padding: 9px 16px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #888;
+    background: transparent;
+    border: 1.5px dashed #ccc;
+    border-radius: 20px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.3s;
+  }
+  .login-notif-btn:hover { color: #ff6b6b; border-color: #ff6b6b; }
+  html.dark .login-notif-btn { color: #aaa; border-color: #555; }
+  html.dark .login-notif-btn:hover { color: #ff9ff3; border-color: #ff9ff3; }
+
+  .theme-float {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: var(--chip-bg);
+    color: inherit;
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    z-index: 5;
+  }
+  .theme-float:hover { background: var(--chip-hover); }
+  .theme-header-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin: 0;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .theme-header-btn:hover { background: rgba(255,255,255,0.35); }
+
+  /* ===== CHAT SCREEN ===== */
   .chat-container {
     width: 100%;
-    max-width: 600px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
-    overflow: hidden;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 82vh;
+    overflow: hidden;
   }
   .chat-header-bar {
-    background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
-    padding: 18px 20px;
-    text-align: center;
-    font-size: 1.3rem;
-    font-weight: 900;
-    color: #fff;
-    text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+    display: none;
   }
+  .floating-nav {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 40;
+    pointer-events: none;
+  }
+  .floating-nav > * { pointer-events: auto; }
+  .floating-nav-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .float-btn {
+    background: rgba(255,255,255,0.25);
+    backdrop-filter: blur(6px);
+    color: inherit;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    text-decoration: none;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    transition: background 0.2s, transform 0.2s;
+  }
+  html.dark .float-btn { background: rgba(255,255,255,0.12); color: #eee; }
+  .float-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.45); }
+  html.dark .float-btn:hover { background: rgba(255,255,255,0.25); }
+  .clear-chat-btn { color: #e5484d !important; }
+  .clear-chat-btn:hover { background: rgba(229,72,77,0.2) !important; }
+
   .chat-messages-area {
     flex: 1;
-    background: #fdfdfd;
+    background-color: #eae6de;
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23c8c0b4' stroke-width='1.5' opacity='0.5'%3E%3Ccircle cx='30' cy='40' r='8'/%3E%3Cpath d='M60 25l4 8h-8z'/%3E%3Cpath d='M90 55c-4-4-4-10 0-14s10-4 14 0'/%3E%3Crect x='130' y='30' width='14' height='14' rx='3'/%3E%3Cpath d='M160 60l10-5-10-5'/%3E%3Cpath d='M45 85c3-6 9-6 12 0'/%3E%3Ccircle cx='85' cy='90' r='5'/%3E%3Cpath d='M115 78l6 6-6 6-6-6z'/%3E%3Cpath d='M155 95h12M161 89v12'/%3E%3Cpath d='M25 120c5-2 10 0 12 5'/%3E%3Ccircle cx='70' cy='130' r='6'/%3E%3Cpath d='M105 125l8 4-8 4z'/%3E%3Crect x='140' y='120' width='10' height='10' rx='2'/%3E%3Cpath d='M175 135c-3-3-3-8 0-11s8-3 11 0'/%3E%3Cpath d='M35 160l5 10h-10z'/%3E%3Ccircle cx='80' cy='170' r='7'/%3E%3Cpath d='M110 165h14M117 158v14'/%3E%3Cpath d='M150 160l6-3 6 3v6l-6 3-6-3z'/%3E%3Cpath d='M185 175c4 0 7 3 7 7'/%3E%3Cpath d='M55 50l3 6h-6z'/%3E%3Cpath d='M175 45h10M180 40v10'/%3E%3Cpath d='M50 145c3-3 8-3 11 0'/%3E%3Ccircle cx='195' cy='90' r='5'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    backdrop-filter: blur(5px);
     color: #333;
-    padding: 20px;
+    padding: 68px 20px 20px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     direction: rtl;
   }
-  .chat-message {
-    max-width: 80%;
-    padding: 12px 16px;
-    border-radius: 14px;
+  html.dark .chat-messages-area {
+    background-color: #1a1a2e;
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23333355' stroke-width='1.5' opacity='0.5'%3E%3Ccircle cx='30' cy='40' r='8'/%3E%3Cpath d='M60 25l4 8h-8z'/%3E%3Cpath d='M90 55c-4-4-4-10 0-14s10-4 14 0'/%3E%3Crect x='130' y='30' width='14' height='14' rx='3'/%3E%3Cpath d='M160 60l10-5-10-5'/%3E%3Cpath d='M45 85c3-6 9-6 12 0'/%3E%3Ccircle cx='85' cy='90' r='5'/%3E%3Cpath d='M115 78l6 6-6 6-6-6z'/%3E%3Cpath d='M155 95h12M161 89v12'/%3E%3Cpath d='M25 120c5-2 10 0 12 5'/%3E%3Ccircle cx='70' cy='130' r='6'/%3E%3Cpath d='M105 125l8 4-8 4z'/%3E%3Crect x='140' y='120' width='10' height='10' rx='2'/%3E%3Cpath d='M175 135c-3-3-3-8 0-11s8-3 11 0'/%3E%3Cpath d='M35 160l5 10h-10z'/%3E%3Ccircle cx='80' cy='170' r='7'/%3E%3Cpath d='M110 165h14M117 158v14'/%3E%3Cpath d='M150 160l6-3 6 3v6l-6 3-6-3z'/%3E%3Cpath d='M185 175c4 0 7 3 7 7'/%3E%3Cpath d='M55 50l3 6h-6z'/%3E%3Cpath d='M175 45h10M180 40v10'/%3E%3Cpath d='M50 145c3-3 8-3 11 0'/%3E%3Ccircle cx='195' cy='90' r='5'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    color: #eee;
+  }
+  .chat-empty {
+    text-align: center;
+    color: var(--empty-text);
+    font-family: 'Cairo', sans-serif;
     font-size: 1rem;
-    font-weight: 700;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    margin-top: 50px;
+    font-weight: 600;
+  }
+  .chat-empty i {
+    font-size: 3rem;
+    color: #ddd;
+    margin-bottom: 15px;
+    display: block;
+  }
+  .chat-message {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Cairo', sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     word-break: break-word;
-    position: relative;
+    animation: msgIn 0.3s ease;
+    line-height: 1.7;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   .chat-message.me {
     align-self: flex-start;
-    background: #ff6b6b;
+    background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
     color: #fff;
-    border-bottom-left-radius: 2px;
+    border-bottom-left-radius: 4px;
   }
   .chat-message.other {
     align-self: flex-end;
-    background: #fff;
-    color: #333;
-    border-bottom-right-radius: 2px;
-    border: 1px solid #eee;
+    background: var(--msg-other-bg);
+    color: var(--msg-other-text);
+    border-bottom-right-radius: 4px;
+    border: 1px solid var(--msg-other-border);
+  }
+  .chat-message.john {
+    background: linear-gradient(135deg, #38ef7d, #11998e);
+    color: #fff;
+  }
+  .chat-message.joody {
+    background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
+    color: #fff;
   }
   .chat-msg-info {
-    font-size: 0.8rem;
-    opacity: 0.8;
-    margin-bottom: 4px;
+    font-size: 0.72rem;
+    opacity: 0.75;
+    margin-bottom: 5px;
     display: flex;
     justify-content: space-between;
     gap: 15px;
   }
+  .chat-msg-info b { font-weight: 800; }
   .chat-msg-footer {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     margin-top: 6px;
-    font-size: 0.75rem;
-    opacity: 0.85;
+    font-size: 0.7rem;
     gap: 5px;
   }
   .seen-badge {
     cursor: pointer;
-    background: rgba(0,0,0,0.1);
-    padding: 2px 6px;
+    background: var(--chip-bg);
+    padding: 3px 10px;
     border-radius: 10px;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 5px;
+    transition: background 0.2s;
+    font-size: 0.7rem;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    color: inherit;
+  }
+  .seen-badge i { font-size: 0.75rem; }
+  .seen-badge:hover { background: var(--chip-hover); }
+
+  .msg-attachment {
+    margin: 8px 0 4px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.08);
+  }
+  .chat-message.me .msg-attachment { background: rgba(255,255,255,0.18); }
+  .msg-attachment img,
+  .msg-attachment audio,
+  .msg-attachment video {
+    display: block;
+    max-width: 100%;
+    max-height: 260px;
+    border-radius: 12px;
+    object-fit: cover;
+  }
+  .msg-attachment audio { max-height: 55px; width: 100%; }
+  .msg-file-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: inherit;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 800;
+    border-radius: 12px;
     transition: background 0.2s;
   }
-  .seen-badge:hover {
-    background: rgba(0,0,0,0.2);
+  .chat-message.me .msg-file-link { color: #fff; }
+  .msg-file-link:hover { background: var(--chip-hover); }
+  .msg-file-link i { font-size: 1.8rem; opacity: 0.9; flex-shrink: 0; }
+  .msg-file-link div { flex: 1; min-width: 0; }
+  .msg-file-link .file-icon { font-size: 2rem; }
+  .msg-file-link .file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
   }
+  .msg-file-link .file-info { font-size: 0.72rem; opacity: 0.65; font-weight: 600; }
+
   .chat-input-bar {
-    background: #fff;
-    padding: 15px;
-    border-top: 1px solid #eee;
+    background: var(--input-bar-bg);
+    padding: 10px 16px;
+    border-top: 1px solid var(--input-border);
     display: flex;
     flex-direction: column;
-    gap: 10px;
-  }
-  .chat-name-row input, .chat-input-row input {
-    width: 100%;
-    padding: 12px 16px;
-    font-family: 'Cairo', sans-serif;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    outline: none;
-    background: #fdfdfd;
-  }
-  .chat-name-row input:focus, .chat-input-row input:focus {
-    border-color: #ff6b6b;
+    gap: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.06);
   }
   .chat-input-row {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    align-items: center;
   }
-  .chat-input-row button {
-    padding: 0 25px;
+  .chat-input-row input[type="text"] {
+    flex: 1;
+    padding: 13px 20px;
     font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: 2px solid var(--input-border);
+    border-radius: 25px;
+    outline: none;
+    background: var(--input-bg);
+    color: var(--input-text);
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    direction: rtl;
+    min-width: 0;
+  }
+  .chat-input-row input[type="text"]:focus { border-color: #ff6b6b; }
+  .chat-input-row input::placeholder { color: #aaa; }
+
+  .icon-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: var(--chip-bg);
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.1rem;
-    font-weight: 900;
+    transition: transform 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--chip-hover); transform: scale(1.08); }
+  .icon-btn:active { transform: scale(0.92); }
+  html.dark .icon-btn { color: #eee; }
+
+  .john-theme .chat-send-btn {
+    background: linear-gradient(135deg, #38ef7d, #11998e) !important;
+    box-shadow: 0 4px 15px rgba(56,239,125,0.4) !important;
+  }
+  .john-theme .chat-send-btn:hover { box-shadow: 0 6px 20px rgba(56,239,125,0.55) !important; }
+  .john-theme .icon-btn {
+    background: rgba(56,239,125,0.15) !important;
+    color: #11998e !important;
+  }
+  .john-theme .icon-btn:hover { background: rgba(56,239,125,0.3) !important; }
+  html.dark .john-theme .icon-btn { color: #38ef7d !important; }
+  .john-theme .attach-option i { color: inherit !important; }
+  .john-theme .attach-option:last-child i { color: inherit !important; }
+
+  .chat-send-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
     background: linear-gradient(135deg, #ff6b6b, #ff9ff3);
     color: #fff;
     border: none;
-    border-radius: 12px;
     cursor: pointer;
-    white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(255,107,107,0.3);
-    transition: transform 0.1s;
-  }
-  .chat-input-row button:active {
-    transform: scale(0.95);
-  }
-  .chat-back-btn {
-    margin-top: 20px;
-    padding: 12px 30px;
-    font-family: 'Cairo', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
     font-size: 1.1rem;
-    font-weight: 900;
-    background: rgba(255,255,255,0.3);
-    border: 2px solid #fff;
-    color: #fff;
-    border-radius: 50px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: transform 0.2s;
   }
-  .chat-back-btn:hover { transform: scale(1.05); }
+  .chat-send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(255,107,107,0.5); }
+  .chat-send-btn:active { transform: scale(0.9); }
+  .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .recording-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,107,107,0.1);
+    border-radius: 30px;
+    padding: 8px 16px;
+    color: #ff6b6b;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+  }
+  .recording-bar.active { display: flex; }
+  .rec-pulse {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ff6b6b;
+    animation: recPulse 1s infinite;
+  }
+  @keyframes recPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.4); }
+  }
+  .rec-timer { flex: 1; text-align: center; }
+  .rec-cancel, .rec-send {
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    transition: transform 0.15s;
+  }
+  .rec-cancel { background: #eee; color: #666; }
+  .rec-send { background: linear-gradient(135deg, #ff6b6b, #ff9ff3); color: #fff; }
+  .rec-cancel:hover, .rec-send:hover { transform: scale(1.1); }
+  html.dark .rec-cancel { background: #3a3a55; color: #bbb; }
+
+  .file-preview {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: var(--chip-bg);
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 700;
+  }
+  .file-preview.active { display: flex; }
+  .file-preview i { font-size: 1.5rem; opacity: 0.85; }
+  .file-preview span {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-preview button {
+    border: none;
+    background: none;
+    color: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+  .file-preview button:hover { opacity: 1; }
+
+  .attach-menu {
+    position: relative;
+  }
+  .attach-options {
+    display: none;
+    position: absolute;
+    bottom: 55px;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--field-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    padding: 6px;
+    z-index: 50;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 170px;
+    backdrop-filter: blur(12px);
+  }
+  .attach-options.active { display: flex; }
+  .attach-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: none;
+    background: transparent !important;
+    color: var(--card-text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background 0.15s;
+    text-align: right;
+    width: 100%;
+    box-shadow: none !important;
+    white-space: nowrap;
+  }
+  .attach-option:hover { background: var(--chip-bg) !important; }
+  .attach-option i {
+    font-size: 1.15rem;
+    color: var(--card-sub);
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+  }
+  .attach-option:first-child i { color: inherit; }
+  .attach-option:last-child i { color: inherit; }
+
+  #fileInput { display: none; }
+
+  /* ===== SKELETON LOADING ===== */
+  .skeleton-msg {
+    max-width: 75%;
+    min-width: 45%;
+    padding: 18px 20px;
+    border-radius: 18px;
+    background: rgba(0,0,0,0.06);
+    margin-bottom: 14px;
+    animation: skeletonPulse 1.4s ease infinite;
+  }
+  .skeleton-msg.other { align-self: flex-end; }
+  .skeleton-msg.me { align-self: flex-start; }
+  html.dark .skeleton-msg { background: rgba(255,255,255,0.06); }
+  .skeleton-msg .sk-line {
+    height: 16px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.35);
+    margin-bottom: 12px;
+    animation: skeletonPulse 1.4s ease infinite;
+  }
+  html.dark .skeleton-msg .sk-line { background: rgba(255,255,255,0.08); }
+  .skeleton-msg .sk-line:last-child { margin-bottom: 0; }
+  .skeleton-msg .sk-line.w70 { width: 70%; }
+  .skeleton-msg .sk-line.w50 { width: 50%; }
+  .skeleton-msg .sk-line.w40 { width: 40%; }
+  .skeleton-msg .sk-line.w90 { width: 90%; }
+  @keyframes skeletonPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @media (max-width: 600px) {
+    .chat-message { max-width: 86%; font-size: 0.9rem; }
+    .chat-messages-area { padding: 68px 14px 14px; }
+    .login-card { padding: 38px 25px; }
+    .chat-header-bar { padding: 0 10px; gap: 6px; }
+    .icon-btn { width: 42px; height: 42px; }
+    .chat-send-btn { width: 46px; height: 46px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="chat-container">
-  <div class="chat-header-bar">
-    💬 شات مباشر
+<!-- LOGIN SCREEN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <button class="theme-float" id="themeBtnCard" title="وضع ليلي/نهاري">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+    <div class="login-icon-circle">
+      <i class="fas fa-lock"></i>
+    </div>
+    <div class="login-title">ادخل عشان تفتح الشات</div>
+    <div class="login-subtitle">اكتب اسمك وكلمة السر عشان تكمل</div>
+    <div class="login-field-wrap">
+      <input type="text" class="login-field" id="loginName" placeholder="اسمك" autocomplete="off" />
+      <i class="fas fa-user"></i>
+    </div>
+    <div class="login-field-wrap">
+      <input type="password" class="login-field" id="loginPassword" placeholder="كلمة السر" autocomplete="off" />
+      <i class="fas fa-key"></i>
+    </div>
+    <button class="login-btn" id="loginBtn">
+      <span>ادخل</span>
+      <i class="fas fa-arrow-right-to-bracket"></i>
+    </button>
+    <div class="login-error" id="loginError"></div>
+    <button class="login-notif-btn" id="notifBtn">
+      <i class="fas fa-bell"></i>
+      <span>فعّل التنبيهات</span>
+    </button>
   </div>
-  <div class="chat-messages-area" id="chatBody">
-    <!-- Messages -->
+</div>
+
+<!-- CHAT SCREEN -->
+<div class="chat-container" id="chatContainer" style="display:none;">
+  <div class="floating-nav">
+    <a href="index.html" class="float-btn" title="رجوع">
+      <i class="fas fa-arrow-right"></i>
+    </a>
+    <div class="floating-nav-right">
+      <button class="float-btn" id="chatNotifBtn" title="فعّل التنبيهات" style="display:none;">
+        <i class="fas fa-bell"></i>
+      </button>
+      <button class="float-btn theme-header-btn" id="themeBtnChat" title="وضع ليلي/نهاري">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="float-btn clear-chat-btn" id="clearChatBtn" title="مسح كل الرسايل" style="display:none;">
+        <i class="fas fa-trash-can"></i>
+      </button>
+    </div>
   </div>
+  <div class="chat-messages-area" id="chatBody"></div>
   <div class="chat-input-bar">
-    <div class="chat-name-row">
-      <input type="text" id="chatSenderInput" placeholder="اسمك (مثلا: جودي / أنا)" value="جودي" />
+    <div class="recording-bar" id="recBar">
+      <div class="rec-pulse"></div>
+      <span class="rec-timer" id="recTimer">0:00</span>
+      <button class="rec-cancel" id="recCancel" title="إلغاء"><i class="fas fa-times"></i></button>
+      <button class="rec-send" id="recSend" title="إرسال"><i class="fas fa-check"></i></button>
+    </div>
+    <div class="file-preview" id="filePreview">
+      <i class="fas fa-paperclip"></i>
+      <span id="filePreviewName"></span>
+      <button id="filePreviewRemove" title="إزالة"><i class="fas fa-times"></i></button>
     </div>
     <div class="chat-input-row">
+      <div class="attach-menu">
+        <button class="icon-btn" id="attachBtn" title="إرفاق">
+          <i class="fas fa-paperclip"></i>
+        </button>
+        <div class="attach-options" id="attachOptions">
+          <button class="attach-option" id="fileBtn">
+            <i class="fas fa-folder-open"></i>
+            <span>إرسال ملف</span>
+          </button>
+          <button class="attach-option" id="micBtn">
+            <i class="fas fa-microphone"></i>
+            <span>تسجيل صوت</span>
+          </button>
+        </div>
+      </div>
       <input type="text" id="chatTextInput" placeholder="اكتب رسالتك هنا..." />
-      <button id="chatSendBtn">إرسال</button>
+      <button class="chat-send-btn" id="chatSendBtn" title="إرسال">
+        <i class="fas fa-paper-plane"></i>
+      </button>
     </div>
   </div>
 </div>
 
-<a href="index.html" class="chat-back-btn">⬅ العودة للموقع الرئيسي</a>
+<input type="file" id="fileInput" />
 
 <script>
+const loginOverlay = document.getElementById('loginOverlay');
+const loginName = document.getElementById('loginName');
+const loginPassword = document.getElementById('loginPassword');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+const notifBtn = document.getElementById('notifBtn');
+const chatNotifBtn = document.getElementById('chatNotifBtn');
+const chatContainer = document.getElementById('chatContainer');
 const chatBody = document.getElementById('chatBody');
-const chatSenderInput = document.getElementById('chatSenderInput');
 const chatTextInput = document.getElementById('chatTextInput');
 const chatSendBtn = document.getElementById('chatSendBtn');
+const attachBtn = document.getElementById('attachBtn');
+const attachOptions = document.getElementById('attachOptions');
+const fileBtn = document.getElementById('fileBtn');
+const micBtn = document.getElementById('micBtn');
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+const filePreviewName = document.getElementById('filePreviewName');
+const filePreviewRemove = document.getElementById('filePreviewRemove');
+const recBar = document.getElementById('recBar');
+const recTimer = document.getElementById('recTimer');
+const recCancel = document.getElementById('recCancel');
+const recSend = document.getElementById('recSend');
+const themeBtnCard = document.getElementById('themeBtnCard');
+const themeBtnChat = document.getElementById('themeBtnChat');
 
-const savedSender = localStorage.getItem('chat_sender_name');
-if (savedSender) {
-  chatSenderInput.value = savedSender;
+let CURRENT_SENDER = '';
+let pendingFile = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let recInterval = null;
+let recStartTime = 0;
+let pendingVoice = null;
+let pendingPreviewURL = null;
+
+/* ===== THEME ===== */
+const SUN_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.2" y1="4.2" x2="5.6" y2="5.6"/><line x1="18.4" y1="18.4" x2="19.8" y2="19.8"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.2" y1="19.8" x2="5.6" y2="18.4"/><line x1="18.4" y1="5.6" x2="19.8" y2="4.2"/></svg>';
+const MOON_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+function applyTheme(dark) {
+  document.documentElement.classList.toggle('dark', dark);
+  const icon = dark ? SUN_SVG : MOON_SVG;
+  if (themeBtnCard) themeBtnCard.innerHTML = icon;
+  if (themeBtnChat) themeBtnChat.innerHTML = icon;
+  try { localStorage.setItem('chat_theme', dark ? 'dark' : 'light'); } catch(e) {}
+}
+const savedTheme = (function() { try { return localStorage.getItem('chat_theme'); } catch(e) { return null; } })();
+applyTheme(savedTheme === 'dark');
+function toggleTheme() {
+  applyTheme(!document.documentElement.classList.contains('dark'));
+}
+if (themeBtnCard) themeBtnCard.addEventListener('click', toggleTheme);
+if (themeBtnChat) themeBtnChat.addEventListener('click', toggleTheme);
+
+/* ===== NOTIFICATIONS ===== */
+function requestNotif() {
+  if (!('Notification' in window)) {
+    alert('المتصفح ده مش بيدعم التنبيهات.');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+      notifBtn.style.display = 'none';
+      chatNotifBtn.style.display = 'none';
+      try {
+        new Notification('✓ التنبيهات مفعّلة', { body: 'هتصلك إشعارات لما توصلك رسايل جديدة' });
+      } catch(e) {}
+    } else {
+      alert('التنبيهات مرفوضة. افتح الإعدادات واسمح بالتنبيهات للموقع.');
+    }
+  });
+}
+notifBtn.addEventListener('click', requestNotif);
+chatNotifBtn.addEventListener('click', requestNotif);
+document.addEventListener('click', function firstClickEnableNotif() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+  document.removeEventListener('click', firstClickEnableNotif);
+}, { once: true });
+
+/* ===== LOGIN ===== */
+loginBtn.addEventListener('click', doLogin);
+loginPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') doLogin(); });
+loginName.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginPassword.focus(); });
+
+function doLogin() {
+  const name = loginName.value.trim();
+  const pass = loginPassword.value.trim();
+
+  if (!name) { loginError.textContent = 'ادخل اسمك الأول'; return; }
+  if (!pass) { loginError.textContent = 'ادخل كلمة السر'; return; }
+
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<span>جاري التحقق...</span><i class="fas fa-spinner fa-spin"></i>';
+
+  fetch('/config.json')
+    .then(r => r.json())
+    .then(config => {
+      if (pass === config.chat_password) {
+        CURRENT_SENDER = name;
+        showChat(config.chat_title || 'شات مباشر');
+      } else {
+        loginError.textContent = 'كلمة السر غلط، جرب تاني';
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<span>ادخل</span><i class="fas fa-arrow-right-to-bracket"></i>';
+      }
+    })
+    .catch(() => {
+      loginError.textContent = 'حصلت مشكلة في تحميل البيانات، جرب تاني';
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = '<span>ادخل</span><i class="fas fa-arrow-right-to-bracket"></i>';
+    });
 }
 
-chatSenderInput.addEventListener('input', () => {
-  localStorage.setItem('chat_sender_name', chatSenderInput.value.trim());
-});
-
-chatSendBtn.addEventListener('click', sendMessage);
-chatTextInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendMessage();
-});
-
-// Robust time formatter
-function formatTime() {
-  const now = new Date();
-  let hours = now.getHours();
-  const minutes = now.getMinutes();
-  const ampm = hours >= 12 ? 'م' : 'ص';
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-  const strM = minutes < 10 ? '0' + minutes : minutes;
-  return hours + ':' + strM + ' ' + ampm;
+function showChat(title) {
+  loginOverlay.classList.add('hidden');
+  chatContainer.style.display = 'flex';
+  if ('Notification' in window && Notification.permission === 'granted') {
+    notifBtn.style.display = 'none';
+    chatNotifBtn.style.display = 'none';
+  } else {
+    notifBtn.style.display = 'inline-flex';
+  }
+  applyJohnTheme();
+  showSkeleton();
+  fetchMessages();
+  setInterval(fetchMessages, 2500);
 }
 
+function showSkeleton() {
+  chatBody.innerHTML =
+    '<div class="skeleton-msg other"><div class="sk-line w70"></div><div class="sk-line w40"></div></div>' +
+    '<div class="skeleton-msg me"><div class="sk-line w90"></div><div class="sk-line w50"></div></div>' +
+    '<div class="skeleton-msg other"><div class="sk-line w70"></div><div class="sk-line w50"></div><div class="sk-line w40"></div></div>' +
+    '<div class="skeleton-msg me"><div class="sk-line w70"></div><div class="sk-line w40"></div></div>';
+}
+
+/* ===== TIME ===== */
+function formatTime(ts) {
+  const now = ts ? new Date(ts) : new Date();
+  let h = now.getHours();
+  const m = now.getMinutes();
+  const ap = h >= 12 ? 'م' : 'ص';
+  h = h % 12 || 12;
+  return h + ':' + (m < 10 ? '0' + m : m) + ' ' + ap;
+}
+
+/* ===== SEND TEXT ===== */
 function sendMessage() {
-  const sender = chatSenderInput.value.trim() || 'مجهول';
   const text = chatTextInput.value.trim();
+
+  if (pendingFile) {
+    sendWithFile(chatTextInput.value.trim());
+    return;
+  }
+  if (pendingVoice) {
+    sendVoice(chatTextInput.value.trim());
+    return;
+  }
   if (!text) return;
 
   const time = formatTime();
   chatSendBtn.disabled = true;
+  chatSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
   fetch('/api/messages', {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sender, text, time })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sender: CURRENT_SENDER, text, time })
   })
-  .then(res => res.json())
+  .then(r => r.json())
   .then(() => {
     chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
     chatTextInput.value = '';
+    chatTextInput.focus();
     fetchMessages();
   })
-  .catch(err => {
+  .catch(() => {
     chatSendBtn.disabled = false;
-    console.error(err);
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
     alert('حدث خطأ أثناء الإرسال.');
   });
 }
 
+/* ===== FILE UPLOAD ===== */
+attachBtn.addEventListener('click', () => {
+  attachOptions.classList.toggle('active');
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.attach-menu')) attachOptions.classList.remove('active');
+});
+
+fileBtn.addEventListener('click', () => {
+  attachOptions.classList.remove('active');
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  if (file.size > 1024 * 1024) {
+    alert('الحد الأقصى للملف 1 ميجا. الملف ده أكبر من كده.');
+    fileInput.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingFile = {
+      name: file.name,
+      data: reader.result.split(',')[1],
+      size: file.size
+    };
+    filePreviewName.textContent = file.name + ' (' + formatSize(file.size) + ')';
+    filePreview.classList.add('active');
+  };
+  reader.readAsDataURL(file);
+  chatTextInput.focus();
+});
+
+filePreviewRemove.addEventListener('click', () => {
+  pendingFile = null;
+  fileInput.value = '';
+  filePreview.classList.remove('active');
+});
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' بايت';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' كيلوبايت';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' ميجابايت';
+}
+
+function fileIcon(name) {
+  const ext = (name.split('.').pop() || '').toLowerCase();
+  const map = {
+    pdf: 'fa-file-pdf', doc: 'fa-file-word', docx: 'fa-file-word',
+    xls: 'fa-file-excel', xlsx: 'fa-file-excel',
+    ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint',
+    zip: 'fa-file-zipper', rar: 'fa-file-zipper', tar: 'fa-file-zipper', gz: 'fa-file-zipper',
+    mp3: 'fa-file-audio', wav: 'fa-file-audio', ogg: 'fa-file-audio', m4a: 'fa-file-audio',
+    mp4: 'fa-file-video', mov: 'fa-file-video', avi: 'fa-file-video',
+    txt: 'fa-file-lines', md: 'fa-file-lines',
+    jpg: 'fa-file-image', jpeg: 'fa-file-image', png: 'fa-file-image',
+    gif: 'fa-file-image', webp: 'fa-file-image', svg: 'fa-file-image',
+    exe: 'fa-file'
+  };
+  return map[ext] || 'fa-file';
+}
+
+function sendWithFile(caption) {
+  const time = formatTime();
+  const ext = (pendingFile.name.split('.').pop() || '').toLowerCase();
+  const imgTypes = ['jpg','jpeg','png','gif','webp','svg'];
+  const audioTypes = ['mp3','wav','ogg','m4a'];
+  const videoTypes = ['mp4','mov','avi','webm'];
+  let msgType = 'file';
+  if (imgTypes.includes(ext)) msgType = 'image';
+  if (audioTypes.includes(ext)) msgType = 'audio';
+  if (videoTypes.includes(ext)) msgType = 'video';
+
+  chatSendBtn.disabled = true;
+  chatSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  fetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sender: CURRENT_SENDER,
+      text: caption,
+      time,
+      msg_type: msgType,
+      file_data: pendingFile.data,
+      file_name: pendingFile.name
+    })
+  })
+  .then(r => r.json())
+  .then(() => {
+    chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    pendingFile = null;
+    fileInput.value = '';
+    filePreview.classList.remove('active');
+    chatTextInput.value = '';
+    chatTextInput.focus();
+    fetchMessages();
+  })
+  .catch(() => {
+    chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    alert('حدث خطأ أثناء إرسال الملف.');
+  });
+}
+
+/* ===== VOICE RECORDING ===== */
+micBtn.addEventListener('click', () => {
+  attachOptions.classList.remove('active');
+  startRecording();
+});
+
+async function startRecording() {
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    alert('متصفحك مش بيدعم تسجيل الصوت.');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    recordedChunks = [];
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      if (blob.size < 1000) {
+        alert('التسجيل قصير جدًا.');
+        stopRecordingUI();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingVoice = {
+          data: reader.result.split(',')[1],
+          mime: blob.type
+        };
+        stopRecordingUI();
+        filePreviewName.textContent = 'تسجيل صوتي (' + formatSize(blob.size) + ')';
+        filePreview.classList.add('active');
+        chatTextInput.focus();
+      };
+      reader.readAsDataURL(blob);
+    };
+    mediaRecorder.start();
+    recStartTime = Date.now();
+    recTimer.textContent = '0:00';
+    recBar.classList.add('active');
+    recInterval = setInterval(() => {
+      const s = Math.floor((Date.now() - recStartTime) / 1000);
+      recTimer.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }, 500);
+  } catch (err) {
+    alert('مش قادر نوصل للمايك. خلي بالك من صلاحيات المايك في المتصفح.');
+  }
+}
+
+function stopRecordingUI() {
+  if (recInterval) { clearInterval(recInterval); recInterval = null; }
+  recBar.classList.remove('active');
+}
+
+recCancel.addEventListener('click', () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+  else stopRecordingUI();
+  if (pendingVoice) {
+    pendingVoice = null;
+    filePreview.classList.remove('active');
+  }
+});
+
+recSend.addEventListener('click', () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+});
+
+function sendVoice(caption) {
+  const time = formatTime();
+  chatSendBtn.disabled = true;
+  chatSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  fetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sender: CURRENT_SENDER,
+      text: caption,
+      time,
+      msg_type: 'voice',
+      file_data: pendingVoice.data,
+      file_name: 'voice.mp3'
+    })
+  })
+  .then(r => r.json())
+  .then(() => {
+    chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    pendingVoice = null;
+    filePreview.classList.remove('active');
+    chatTextInput.value = '';
+    chatTextInput.focus();
+    fetchMessages();
+  })
+  .catch(() => {
+    chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    alert('حدث خطأ أثناء إرسال التسجيل.');
+  });
+}
+
+chatSendBtn.addEventListener('click', sendMessage);
+chatTextInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+/* ===== CLEAR CHAT ===== */
+const clearChatBtn = document.getElementById('clearChatBtn');
+function applyJohnTheme() {
+  const isJohn = CURRENT_SENDER === 'جون';
+  if (clearChatBtn) clearChatBtn.style.display = 'inline-flex';
+  chatContainer.classList.toggle('john-theme', isJohn);
+}
+clearChatBtn.addEventListener('click', () => {
+  if (!confirm('متأكد إنك عايز تمسح كل الرسايل؟ دي مش هترجع خالص.')) return;
+  clearChatBtn.disabled = true;
+  clearChatBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  fetch('/api/messages', { method: 'DELETE' })
+    .then(r => r.json())
+    .then(() => {
+      lastMessagesJson = '';
+      lastNotifCount = -1;
+      fetchMessages();
+      clearChatBtn.disabled = false;
+      clearChatBtn.innerHTML = '<i class="fas fa-trash-can"></i>';
+    })
+    .catch(() => {
+      alert('حصلت مشكلة في مسح الرسايل.');
+      clearChatBtn.disabled = false;
+      clearChatBtn.innerHTML = '<i class="fas fa-trash-can"></i>';
+    });
+});
+
+/* ===== FETCH MESSAGES ===== */
 let lastMessagesJson = '';
 let lastNotifCount = -1;
 
-// Request Notification Permission
-if ('Notification' in window) {
-  if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-    document.addEventListener('click', () => {
-      Notification.requestPermission().catch(() => {});
-    }, { once: true });
-  }
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission().catch(() => {});
 }
 
 function fetchMessages() {
   fetch('/api/messages')
-    .then(res => res.json())
+    .then(r => r.json())
     .then(messages => {
       if (!Array.isArray(messages)) messages = [];
 
-      const currentSender = chatSenderInput.value.trim();
-
-      // Mark unread messages from other user as seen
       messages.forEach(msg => {
-        if (msg.sender !== currentSender && (!msg.seen_by || !msg.seen_by.includes(currentSender))) {
-          markAsSeen(msg.id, currentSender);
+        if (msg.sender !== CURRENT_SENDER && (!msg.seen_by || !msg.seen_by.includes(CURRENT_SENDER))) {
+          markAsSeen(msg.id, CURRENT_SENDER);
         }
       });
 
       if (lastNotifCount !== -1 && messages.length > lastNotifCount) {
         const latest = messages[messages.length - 1];
-        if (latest.sender !== currentSender && document.hidden) {
-          if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification(`💬 رسالة جديدة من ${latest.sender}`, {
-                body: latest.text,
-                icon: 'https://cdn-icons-png.flaticon.com/512/893/893257.png'
-              });
-            } catch(e) {}
-          }
+        if (latest.sender !== CURRENT_SENDER && document.hidden && Notification.permission === 'granted') {
+          try {
+            const body = latest.msg_type === 'voice' ? '🎤 تسجيل صوتي' :
+                         latest.msg_type === 'file' ? '📎 ملف: ' + (latest.file_name || '') :
+                         latest.msg_type === 'image' ? '🖼️ صورة' :
+                         latest.msg_type === 'audio' ? '🎵 ملف صوتي' :
+                         latest.msg_type === 'video' ? '🎬 فيديو' :
+                         (latest.text || 'رسالة جديدة');
+            new Notification('رسالة جديدة من ' + latest.sender, {
+              body: body,
+              icon: 'https://cdn-icons-png.flaticon.com/512/893/893257.png'
+            });
+          } catch(e) {}
         }
       }
       lastNotifCount = messages.length;
@@ -286,61 +1267,73 @@ function fetchMessages() {
 
       chatBody.innerHTML = '';
       if (messages.length === 0) {
-        chatBody.innerHTML = '<div style="text-align:center; color:#888; font-size:1rem; margin-top:40px;">مفيش رسائل لسه، ابدأ الكلام! 💬</div>';
+        chatBody.innerHTML = '<div class="chat-empty"><i class="fas fa-comment-dots"></i>مفيش رسائل لسه، ابدأ الكلام!</div>';
         return;
       }
 
       messages.forEach(msg => {
         const div = document.createElement('div');
-        const isMe = (msg.sender === currentSender);
-        div.className = 'chat-message ' + (isMe ? 'me' : 'other');
+        const isMe = msg.sender === CURRENT_SENDER;
+        const senderName = (msg.sender || '').trim();
+        let colorClass = '';
+        if (isMe && senderName === 'جون') colorClass = ' john';
+        else if (isMe && senderName === 'جودي') colorClass = ' joody';
+        div.className = 'chat-message ' + (isMe ? 'me' : 'other') + colorClass;
+
+        let bodyHtml = '';
+        const type = msg.msg_type || 'text';
+
+        if (type === 'voice') {
+          bodyHtml = '<div class="msg-attachment"><audio controls preload="metadata" src="data:audio/webm;base64,' + msg.file_data + '"></audio></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
+        } else if (type === 'image') {
+          bodyHtml = '<div class="msg-attachment"><img src="data:image/*;base64,' + msg.file_data + '" alt="صورة" onclick="window.open(this.src)"></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
+        } else if (type === 'audio') {
+          const mime = msg.file_name && msg.file_name.toLowerCase().endsWith('.mp3') ? 'audio/mp3' : 'audio/mpeg';
+          bodyHtml = '<div class="msg-attachment"><audio controls preload="metadata" src="data:' + mime + ';base64,' + msg.file_data + '"></audio></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
+        } else if (type === 'video') {
+          bodyHtml = '<div class="msg-attachment"><video controls preload="metadata" src="data:video/mp4;base64,' + msg.file_data + '"></video></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
+        } else if (type === 'file') {
+          const downloadUrl = 'data:application/octet-stream;base64,' + msg.file_data;
+          bodyHtml = '<div class="msg-attachment"><a class="msg-file-link" href="' + downloadUrl + '" download="' + esc(msg.file_name || 'file') + '">' +
+            '<i class="fas ' + fileIcon(msg.file_name || '') + ' file-icon"></i>' +
+            '<div><span class="file-name">' + esc(msg.file_name || 'ملف') + '</span>' +
+            '<span class="file-info">اضغط للتحميل</span></div>' +
+            '<i class="fas fa-download"></i></a></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
+        } else {
+          bodyHtml = '<div>' + esc(msg.text || '') + '</div>';
+        }
 
         let seenHtml = '';
         if (isMe && msg.seen_by) {
-          seenHtml = `<span class="seen-badge" onclick="showSeenInfo('${escapeHtml(msg.seen_by)}')">👁️ تمت رؤيتها بواسطة: ${escapeHtml(msg.seen_by)}</span>`;
+          seenHtml = '<div class="chat-msg-footer"><span class="seen-badge" onclick="showSeenInfo(\'' + esc(msg.seen_by) + '\')"><i class="fas fa-eye"></i> ' + esc(msg.seen_by) + '</span></div>';
         }
 
-        div.innerHTML = `
-          <div class="chat-msg-info">
-            <span><b>${escapeHtml(msg.sender)}</b></span>
-            <span>${escapeHtml(msg.time || '')}</span>
-          </div>
-          <div>${escapeHtml(msg.text)}</div>
-          ${seenHtml ? `<div class="chat-msg-footer">${seenHtml}</div>` : ''}
-        `;
+        div.innerHTML =
+          '<div class="chat-msg-info"><span><b>' + esc(msg.sender) + '</b></span><span>' + esc(msg.time || '') + '</span></div>' +
+          bodyHtml +
+          seenHtml;
         chatBody.appendChild(div);
       });
-      scrollToBottom();
+      chatBody.scrollTop = chatBody.scrollHeight;
     })
-    .catch(err => console.error(err));
+    .catch(() => {});
 }
 
 function markAsSeen(msgId, readerName) {
   fetch('/api/messages', {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'seen', id: msgId, seen_by: readerName })
-  }).catch(err => console.error(err));
+  }).catch(() => {});
 }
 
 function showSeenInfo(seenBy) {
   alert('👁️ تمت رؤية هذه الرسالة بواسطة: ' + seenBy);
 }
 
-function scrollToBottom() {
-  chatBody.scrollTop = chatBody.scrollHeight;
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-fetchMessages();
-setInterval(fetchMessages, 2500);
 </script>
 </body>
 </html>

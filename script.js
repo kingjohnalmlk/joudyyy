@@ -288,34 +288,14 @@ if ('Notification' in window) {
   }
 }
 
-const TURSO_URL = "https://jjjj-kingjohnalmlk.aws-ap-northeast-1.turso.io/v2/pipeline";
-const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODg3MDk0MjMsImlkIjoiMDFhMDc3NjMtMDgwMS03MDNmLTg0ZTQtNzI1NGJmYWY2YTkxIiwia2lkIjoidHEzczY5amdRNzdwQjdmRl9fWnh4eHA0OG9CWHA3M0ZjTGh3N2xlMmlIYyIsInJpZCI6ImU4NzdiYmM1LWYwMTgtNGFiMi05MjgyLWFjNTk2NDBlYWE4NCJ9.O3lAKEZ0jbq3bvW7RSNFAoLTqTNdTpgJUY81o1YEDDg1yfSOlHas7QpW9OSPY3hN_ZXqyduHCTHVr1QB4IetAQ";
-
 let lastKnownMessageCount = -1;
 const chatBadge = document.getElementById('chatBadge');
 
 function checkNewMessages() {
-  fetch(TURSO_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + TURSO_TOKEN,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      requests: [
-        { type: "execute", stmt: { sql: "SELECT sender, text, time FROM messages ORDER BY id ASC" } },
-        { type: "close" }
-      ]
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    const rawRows = data?.results?.[0]?.response?.result?.rows || [];
-    const messages = rawRows.map(r => ({
-      sender: r[0]?.value || '',
-      text: r[1]?.value || '',
-      time: r[2]?.value || ''
-    }));
+  fetch('/api/messages')
+    .then(res => res.json())
+    .then(messages => {
+    if (!Array.isArray(messages)) messages = [];
 
     if (lastKnownMessageCount === -1) {
       lastKnownMessageCount = messages.length;
