@@ -47,7 +47,7 @@ function playPopSound() {
     osc.type = 'square';
     osc.frequency.setValueAtTime(180, t);
     osc.frequency.exponentialRampToValueAtTime(40, t + 0.08);
-    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.setValueAtTime(0.6, t);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
     osc.connect(gain);
     gain.connect(popCtx.destination);

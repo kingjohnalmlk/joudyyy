@@ -927,6 +927,39 @@ const balloonBox = document.getElementById('balloons');
 const balloonColors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#5f27cd', '#f368e0', '#ffd32a', '#1dd1a1'];
 let balloonsActive = false;
 let balloonInterval = null;
+let popCtx = null;
+
+function popSound() {
+  try {
+    popCtx = popCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (popCtx.state === 'suspended') popCtx.resume();
+    const t = popCtx.currentTime;
+    const osc = popCtx.createOscillator();
+    const gain = popCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(500, t);
+    osc.frequency.exponentialRampToValueAtTime(90, t + 0.09);
+    gain.gain.setValueAtTime(0.6, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+    osc.connect(gain);
+    gain.connect(popCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.12);
+    const buffer = popCtx.createBuffer(1, popCtx.sampleRate * 0.06, popCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    }
+    const noise = popCtx.createBufferSource();
+    noise.buffer = buffer;
+    const nGain = popCtx.createGain();
+    nGain.gain.setValueAtTime(0.7, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    noise.connect(nGain);
+    nGain.connect(popCtx.destination);
+    noise.start(t);
+  } catch (e) {}
+}
 
 function spawnChatBalloon() {
   const b = document.createElement('div');
@@ -943,6 +976,7 @@ function spawnChatBalloon() {
     e.stopPropagation();
     if (b.classList.contains('pop')) return;
     b.classList.add('pop');
+    popSound();
     const rect = b.getBoundingClientRect();
     const burst = document.createElement('div');
     burst.className = 'pop-burst';
