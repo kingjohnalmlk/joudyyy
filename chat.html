@@ -338,15 +338,15 @@
   }
   .chat-message {
     max-width: 78%;
-    padding: 12px 16px;
-    border-radius: 18px;
-    font-size: 0.95rem;
+    padding: 8px 12px;
+    border-radius: 14px;
+    font-size: 0.88rem;
     font-weight: 600;
     font-family: 'Cairo', sans-serif;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     word-break: break-word;
     animation: msgIn 0.3s ease;
-    line-height: 1.7;
+    line-height: 1.6;
   }
   @keyframes msgIn {
     from { opacity: 0; transform: translateY(10px) scale(0.95); }
@@ -424,6 +424,59 @@
     object-fit: cover;
   }
   .msg-attachment audio { max-height: 55px; width: 100%; }
+
+  /* WhatsApp-style voice player */
+  .voice-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+    padding: 4px 0;
+  }
+  .voice-play-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.3);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .chat-message.other .voice-play-btn { background: rgba(0,0,0,0.1); color: #333; }
+  .voice-play-btn:hover { transform: scale(1.1); }
+  .voice-play-btn.playing { background: rgba(255,255,255,0.5); }
+  .voice-waveform {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 30px;
+    cursor: pointer;
+  }
+  .voice-waveform .bar {
+    flex: 1;
+    background: rgba(255,255,255,0.5);
+    border-radius: 2px;
+    min-width: 3px;
+    transition: background 0.15s;
+  }
+  .chat-message.other .voice-waveform .bar { background: rgba(0,0,0,0.25); }
+  .voice-waveform .bar.played { background: rgba(255,255,255,0.95); }
+  .chat-message.other .voice-waveform .bar.played { background: rgba(0,0,0,0.6); }
+  .voice-duration {
+    font-size: 0.7rem;
+    font-weight: 700;
+    opacity: 0.8;
+    min-width: 35px;
+    text-align: center;
+    font-family: 'Cairo', sans-serif;
+  }
   .msg-file-link {
     display: flex;
     align-items: center;
@@ -489,7 +542,7 @@
     border-radius: 50%;
     border: none;
     background: var(--chip-bg);
-    color: inherit;
+    color: #111;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -636,7 +689,7 @@
     padding: 12px 16px;
     border: none;
     background: transparent !important;
-    color: var(--card-text);
+    color: #111;
     font-family: 'Cairo', sans-serif;
     font-size: 0.9rem;
     font-weight: 700;
@@ -651,11 +704,13 @@
   .attach-option:hover { background: var(--chip-bg) !important; }
   .attach-option i {
     font-size: 1.15rem;
-    color: var(--card-sub);
+    color: #111;
     flex-shrink: 0;
     width: 22px;
     text-align: center;
   }
+  html.dark .attach-option { color: #eee; }
+  html.dark .attach-option i { color: #eee; }
   .attach-option:first-child i { color: inherit; }
   .attach-option:last-child i { color: inherit; }
 
@@ -939,10 +994,6 @@ function sendMessage() {
     sendWithFile(chatTextInput.value.trim());
     return;
   }
-  if (pendingVoice) {
-    sendVoice(chatTextInput.value.trim());
-    return;
-  }
   if (!text) return;
 
   const time = formatTime();
@@ -1083,6 +1134,8 @@ micBtn.addEventListener('click', () => {
   startRecording();
 });
 
+let recAutoSend = false;
+
 async function startRecording() {
   if (!navigator.mediaDevices || !window.MediaRecorder) {
     alert('متصفحك مش بيدعم تسجيل الصوت.');
@@ -1092,6 +1145,7 @@ async function startRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
     recordedChunks = [];
+    recAutoSend = false;
     mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) recordedChunks.push(e.data);
     };
@@ -1099,22 +1153,19 @@ async function startRecording() {
       stream.getTracks().forEach(t => t.stop());
       const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
       if (blob.size < 1000) {
-        alert('التسجيل قصير جدًا.');
         stopRecordingUI();
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        pendingVoice = {
-          data: reader.result.split(',')[1],
-          mime: blob.type
+      if (recAutoSend) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          stopRecordingUI();
+          sendVoiceNow(reader.result.split(',')[1]);
         };
+        reader.readAsDataURL(blob);
+      } else {
         stopRecordingUI();
-        filePreviewName.textContent = 'تسجيل صوتي (' + formatSize(blob.size) + ')';
-        filePreview.classList.add('active');
-        chatTextInput.focus();
-      };
-      reader.readAsDataURL(blob);
+      }
     };
     mediaRecorder.start();
     recStartTime = Date.now();
@@ -1135,19 +1186,47 @@ function stopRecordingUI() {
 }
 
 recCancel.addEventListener('click', () => {
+  recAutoSend = false;
   if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
   else stopRecordingUI();
-  if (pendingVoice) {
-    pendingVoice = null;
-    filePreview.classList.remove('active');
-  }
 });
 
 recSend.addEventListener('click', () => {
+  recAutoSend = true;
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
   }
 });
+
+function sendVoiceNow(base64Data) {
+  const time = formatTime();
+  chatSendBtn.disabled = true;
+  chatSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  fetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sender: CURRENT_SENDER,
+      text: '',
+      time,
+      msg_type: 'voice',
+      file_data: base64Data,
+      file_name: 'voice.webm'
+    })
+  })
+  .then(r => r.json())
+  .then(() => {
+    chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    fetchMessages();
+  })
+  .catch(() => {
+    chatSendBtn.disabled = false;
+    chatSendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    alert('حدث خطأ أثناء إرسال التسجيل.');
+  });
+}
 
 function sendVoice(caption) {
   const time = formatTime();
@@ -1275,7 +1354,7 @@ function fetchMessages() {
         const type = msg.msg_type || 'text';
 
         if (type === 'voice') {
-          bodyHtml = '<div class="msg-attachment"><audio controls preload="metadata" src="data:audio/webm;base64,' + msg.file_data + '"></audio></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
+          bodyHtml = '<div class="msg-attachment" style="background:transparent;padding:0;"><div class="voice-player" data-src="data:audio/webm;base64,' + msg.file_data + '"><button class="voice-play-btn"><i class="fas fa-play"></i></button><div class="voice-waveform"></div><span class="voice-duration">0:00</span><audio preload="metadata" src="data:audio/webm;base64,' + msg.file_data + '"></audio></div></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
         } else if (type === 'image') {
           bodyHtml = '<div class="msg-attachment"><img src="data:image/*;base64,' + msg.file_data + '" alt="صورة" onclick="window.open(this.src)"></div>' + (msg.text ? '<div>' + esc(msg.text) + '</div>' : '');
         } else if (type === 'audio') {
@@ -1306,8 +1385,67 @@ function fetchMessages() {
         chatBody.appendChild(div);
       });
       chatBody.scrollTop = chatBody.scrollHeight;
+      initVoicePlayers();
     })
     .catch(() => {});
+}
+
+/* ===== WHATSAPP-STYLE VOICE PLAYER ===== */
+function initVoicePlayers() {
+  document.querySelectorAll('.voice-player').forEach(player => {
+    if (player.dataset.init) return;
+    player.dataset.init = '1';
+    const audio = player.querySelector('audio');
+    const btn = player.querySelector('.voice-play-btn');
+    const waveform = player.querySelector('.voice-waveform');
+    const durationEl = player.querySelector('.voice-duration');
+
+    // Generate fake waveform bars
+    const barCount = 30;
+    for (let i = 0; i < barCount; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.height = (20 + Math.random() * 80) + '%';
+      waveform.appendChild(bar);
+    }
+
+    audio.addEventListener('loadedmetadata', () => {
+      durationEl.textContent = fmtDur(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      const pct = audio.currentTime / (audio.duration || 1);
+      const bars = waveform.querySelectorAll('.bar');
+      bars.forEach((b, i) => b.classList.toggle('played', i / barCount <= pct));
+      durationEl.textContent = fmtDur(audio.duration - audio.currentTime);
+    });
+
+    audio.addEventListener('ended', () => {
+      btn.innerHTML = '<i class="fas fa-play"></i>';
+      btn.classList.remove('playing');
+      waveform.querySelectorAll('.bar').forEach(b => b.classList.remove('played'));
+    });
+
+    btn.addEventListener('click', () => {
+      if (audio.paused) {
+        document.querySelectorAll('.voice-player audio').forEach(a => a.pause());
+        audio.play();
+        btn.innerHTML = '<i class="fas fa-pause"></i>';
+        btn.classList.add('playing');
+      } else {
+        audio.pause();
+        btn.innerHTML = '<i class="fas fa-play"></i>';
+        btn.classList.remove('playing');
+      }
+    });
+  });
+}
+
+function fmtDur(sec) {
+  if (!isFinite(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ':' + String(s).padStart(2, '0');
 }
 
 function markAsSeen(msgId, readerName) {
