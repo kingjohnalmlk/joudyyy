@@ -41,32 +41,38 @@ function playPopSound() {
     if (popCtx.state === 'suspended') popCtx.resume();
     const t = popCtx.currentTime;
 
-    // sharp "pop" click
-    const osc = popCtx.createOscillator();
-    const gain = popCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(180, t);
-    osc.frequency.exponentialRampToValueAtTime(40, t + 0.08);
-    gain.gain.setValueAtTime(0.6, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    osc.connect(gain);
-    gain.connect(popCtx.destination);
-    osc.start(t);
-    osc.stop(t + 0.1);
-
-    // a little bit of noise for realism
-    const buffer = popCtx.createBuffer(1, popCtx.sampleRate * 0.05, popCtx.sampleRate);
+    // real "pop": sharp noise crack
+    const dur = 0.05;
+    const buffer = popCtx.createBuffer(1, Math.max(1, Math.floor(popCtx.sampleRate * dur)), popCtx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) {
-      data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
     }
     const noise = popCtx.createBufferSource();
     noise.buffer = buffer;
+    const hp = popCtx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 700;
     const nGain = popCtx.createGain();
-    nGain.gain.value = 0.3;
-    noise.connect(nGain);
+    nGain.gain.setValueAtTime(1.0, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    noise.connect(hp);
+    hp.connect(nGain);
     nGain.connect(popCtx.destination);
     noise.start(t);
+
+    // low thump underneath
+    const osc = popCtx.createOscillator();
+    const og = popCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.06);
+    og.gain.setValueAtTime(0.6, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    osc.connect(og);
+    og.connect(popCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.08);
   } catch (e) { /* ignore */ }
 }
 
