@@ -888,23 +888,14 @@ function doLogin() {
   loginBtn.disabled = true;
   loginBtn.innerHTML = '<span>جاري التحقق...</span><i class="fas fa-spinner fa-spin"></i>';
 
-  fetch('/config.json')
-    .then(r => r.json())
-    .then(config => {
-      if (pass === config.chat_password) {
-        CURRENT_SENDER = name;
-        showChat(config.chat_title || 'شات مباشر');
-      } else {
-        loginError.textContent = 'كلمة السر غلط، جرب تاني';
-        loginBtn.disabled = false;
-        loginBtn.innerHTML = '<span>ادخل</span><i class="fas fa-arrow-right-to-bracket"></i>';
-      }
-    })
-    .catch(() => {
-      loginError.textContent = 'حصلت مشكلة في تحميل البيانات، جرب تاني';
-      loginBtn.disabled = false;
-      loginBtn.innerHTML = '<span>ادخل</span><i class="fas fa-arrow-right-to-bracket"></i>';
-    });
+  if (pass === 'joudyyy') {
+    CURRENT_SENDER = name;
+    showChat('شات');
+  } else {
+    loginError.textContent = 'كلمة السر غلط، جرب تاني';
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = '<span>ادخل</span><i class="fas fa-arrow-right-to-bracket"></i>';
+  }
 }
 
 function showChat(title) {
